@@ -1,0 +1,20 @@
+{
+  "name": "leadflow-server",
+  "version": "1.0.0",
+  "description": "LeadFlow CRM Backend API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand --forceExit",
+    "test:watch": "jest --watch --runInBand"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"],
+    "testTimeout": 30000
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

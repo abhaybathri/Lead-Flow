@@ -1,0 +1,12 @@
+{
+  "name": "leadflow",
+  "version": "1.0.0",
+  "description": "LeadFlow Sales CRM",
+  "scripts": {
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "seed": "node server/src/config/seed.js",
+    "test": "npm test --prefix server",
+    "build": "npm run build --prefix client"
+  }
+}
