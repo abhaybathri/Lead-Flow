@@ -12,16 +12,23 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // CORS — CLIENT_URL can be a comma-separated list of allowed origins
-// e.g. "https://lead-flow-rust-omega.vercel.app,http://localhost:5173"
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
+// Always includes localhost for dev and the known Vercel deployment
+const BASE_ALLOWED = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://lead-flow-rust-omega.vercel.app',
+];
+
+const envOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((o) => o.trim()).filter(Boolean)
+  : [];
+
+const allowedOrigins = [...new Set([...BASE_ALLOWED, ...envOrigins])];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, server-to-server)
+      // Allow requests with no origin (curl, Postman, mobile apps, server-to-server)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
