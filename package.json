@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "description": "LeadFlow Sales CRM",
   "scripts": {
-    "install": "npm install --prefix server",
-    "start": "npm start --prefix server",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "seed": "node server/src/config/seed.js",
