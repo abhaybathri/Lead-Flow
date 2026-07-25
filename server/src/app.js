@@ -11,26 +11,24 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-// CORS — CLIENT_URL can be a comma-separated list of allowed origins
-// Always includes localhost for dev and the known Vercel deployment
-const BASE_ALLOWED = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://lead-flow-rust-omega.vercel.app',
-];
-
+// CORS — accept localhost for dev + any *.vercel.app deployment + CLIENT_URL overrides
 const envOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((o) => o.trim()).filter(Boolean)
   : [];
 
-const allowedOrigins = [...new Set([...BASE_ALLOWED, ...envOrigins])];
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // curl, Postman, server-to-server
+  if (origin === 'http://localhost:5173') return true;
+  if (origin === 'http://localhost:3000') return true;
+  if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return true; // any Vercel deployment
+  if (envOrigins.includes(origin)) return true;
+  return false;
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, mobile apps, server-to-server)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (isAllowedOrigin(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
