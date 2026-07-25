@@ -1,13 +1,29 @@
 import axios from 'axios'
 
-// In production (Vercel), VITE_API_URL must be set to the Render backend URL.
-// Fallback to empty string for local dev (Vite proxy handles it).
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
+const TOKEN_KEY = 'lf_access_token'
+
+export const saveToken = (token) => {
+  if (token) localStorage.setItem(TOKEN_KEY, token)
+  else localStorage.removeItem(TOKEN_KEY)
+}
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY)
 
 const api = axios.create({
   baseURL: `${API_BASE}/api/v1`,
-  withCredentials: true,
+  withCredentials: true, // still needed for cookie-based refresh fallback
   headers: { 'Content-Type': 'application/json' },
+})
+
+// Attach stored token to every request as Bearer header
+api.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 let isRefreshing = false
@@ -21,16 +37,14 @@ const processQueue = (error) => {
   failedQueue = []
 }
 
-// Routes that should NEVER trigger a refresh attempt
 const NO_RETRY_URLS = ['/auth/refresh', '/auth/login', '/auth/me']
 
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-
-    // Skip retry logic for auth endpoints or already-retried requests
     const isNoRetry = NO_RETRY_URLS.some((url) => original.url?.includes(url))
+
     if (error.response?.status === 401 && !original._retry && !isNoRetry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -44,12 +58,15 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        await api.post('/auth/refresh')
+        const res = await api.post('/auth/refresh')
+        // Save the new access token if returned in body
+        const newToken = res.data?.data?.accessToken
+        if (newToken) saveToken(newToken)
         processQueue(null)
         return api(original)
       } catch (err) {
         processQueue(err)
-        // Only redirect if not already on login page
+        saveToken(null)
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login'
         }
